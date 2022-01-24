@@ -1,4 +1,4 @@
-name: -actions-workflow
+name: golang-build-actions-workflow
 on: push
 jobs:
   test:
@@ -11,6 +11,7 @@ jobs:
         with:
           go-version: '1.9.3' # The Go version to download (if necessary) and use.
           
+      - run: go get .
       - run: go build
       
       - uses: actions/upload-artifact@v2
