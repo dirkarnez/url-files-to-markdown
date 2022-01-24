@@ -17,6 +17,6 @@ jobs:
       
       - uses: actions/upload-artifact@v2
         with:
-          name: url-files-to-markdown.exe
+          name: url-files-to-markdown
           path: url-files-to-markdown.exe
       
