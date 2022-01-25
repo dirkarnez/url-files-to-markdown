@@ -1,13 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"fmt"
 	"io/fs"
 	"log"
+	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
 	"github.com/graniticio/inifile"
 )
@@ -18,19 +22,38 @@ var (
 
 func main() {
 	flag.StringVar(&dir, "dir", "", "Absolute path for target directory")
+
 	flag.Parse()
 	if len(dir) < 1 {
 		log.Fatal("No --dir is given")
 	}
 
 	urlFiles := Scan(dir, ".url")
+	urlFilesLen := len(urlFiles)
+	if urlFilesLen < 1 {
+		log.Fatal("No .url file found")
+	}
 	fmt.Printf("There are %d url files\n", len(urlFiles))
+
+	file, err := os.Create(fmt.Sprintf("%s.txt", getFolderName(dir)))
+	errExit(err)
+	defer file.Close()
+	w := bufio.NewWriter(file)
+
 	for _, s := range urlFiles {
 		ic, err := inifile.NewIniConfigFromPath(s)
 		errExit(err)
 		url, err := ic.Value("InternetShortcut", "URL")
 		errExit(err)
-		fmt.Printf("- [%s](%s)\n", getTitle(url), url)
+		//fmt.Println("checking", url, "...")
+		title, err := getTitle(url)
+		errExit(err)
+		fmt.Fprintf(w, "- [%s](%s)\n", title, url)
+	}
+	errExit(w.Flush())
+
+	for _, s := range urlFiles {
+		errExit(os.Remove(s))
 	}
 }
 
@@ -54,15 +77,46 @@ func Scan(root, ext string) []string {
 	return a
 }
 
-func getTitle(urlstr string) string {
+func getTitle(urlstr string) (string, error) {
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
 	var title string
-	if err := chromedp.Run(ctx,
+
+	chromedp.ListenTarget(ctx, func(ev interface{}) {
+		switch ev := ev.(type) {
+
+		case *network.EventResponseReceived:
+			resp := ev.Response
+			if len(resp.Headers) != 0 && resp.URL == urlstr {
+				//log.Printf("received headers: %s %s", resp.URL, resp.MimeType)
+				if resp.MimeType != "text/html" {
+					chromedp.Cancel(ctx)
+				}
+			}
+		}
+	})
+
+	err := chromedp.Run(ctx,
 		chromedp.Navigate(urlstr),
 		chromedp.Title(&title),
-	); err != nil {
-		log.Fatal(err)
+	)
+	if err == context.Canceled {
+		// url as title
+		return urlstr, nil
 	}
-	return title
+
+	return title, err
+}
+
+// valid: `P:\testing`, `P:\testing\`
+// returning `testing`
+func getFolderName(input string) string {
+	lastIndex := strings.LastIndex(input, `\`)
+	length := len(input)
+	if lastIndex+1 == length {
+		lastIndex = strings.LastIndex(input[0:length-1], `\`)
+		return input[lastIndex+1 : length-1]
+	} else {
+		return input[lastIndex+1 : length]
+	}
 }
