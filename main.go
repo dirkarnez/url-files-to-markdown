@@ -45,7 +45,7 @@ func main() {
 		errExit(err)
 		url, err := ic.Value("InternetShortcut", "URL")
 		errExit(err)
-		//fmt.Println("checking", url, "...")
+		fmt.Println("checking", url, "...")
 		title, err := getTitle(url)
 		errExit(err)
 		fmt.Fprintf(w, "- [%s](%s)\n", title, url)
