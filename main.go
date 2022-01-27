@@ -45,10 +45,15 @@ func main() {
 		errExit(err)
 		url, err := ic.Value("InternetShortcut", "URL")
 		errExit(err)
-		fmt.Println("checking", url, "...")
-		title, err := getTitle(url)
-		errExit(err)
-		fmt.Fprintf(w, "- [%s](%s)\n", title, url)
+		fmt.Println("checking", url, ", in", s, "...")
+		protocol := url[0:strings.Index(url, `://`)]
+		if protocol == `http` || protocol == `https` {
+			title, err := getTitle(url)
+			errExit(err)
+			fmt.Fprintf(w, "- [%s](%s)\n", title, url)
+		} else {
+			fmt.Fprintf(w, "- [%s](%s)\n", url, url)
+		}
 	}
 	errExit(w.Flush())
 
@@ -83,13 +88,21 @@ func getTitle(urlstr string) (string, error) {
 	var title string
 
 	chromedp.ListenTarget(ctx, func(ev interface{}) {
+
 		switch ev := ev.(type) {
 
 		case *network.EventResponseReceived:
 			resp := ev.Response
-			if len(resp.Headers) != 0 && resp.URL == urlstr {
-				//log.Printf("received headers: %s %s", resp.URL, resp.MimeType)
-				if resp.MimeType != "text/html" {
+			if len(resp.Headers) >= 0 {
+				if resp.URL == urlstr {
+					log.Printf("received headers: %s %s", resp.URL, resp.MimeType)
+					if resp.MimeType != "text/html" {
+						chromedp.Cancel(ctx)
+					}
+				}
+
+				// may be redirected
+				if resp.Headers["Content-Type"] != "text/html" {
 					chromedp.Cancel(ctx)
 				}
 			}
@@ -108,15 +121,25 @@ func getTitle(urlstr string) (string, error) {
 	return title, err
 }
 
-// valid: `P:\testing`, `P:\testing\`
-// returning `testing`
+// fmt.Println(getFolderName(`P`))           //P
+// fmt.Println(getFolderName(`P:`))          //P
+// fmt.Println(getFolderName(`P:\`))         //P
+// fmt.Println(getFolderName(`P:\testing`))  //testing
+// fmt.Println(getFolderName(`P:\testing\`)) //testing
 func getFolderName(input string) string {
+	var folderName string
 	lastIndex := strings.LastIndex(input, `\`)
 	length := len(input)
 	if lastIndex+1 == length {
 		lastIndex = strings.LastIndex(input[0:length-1], `\`)
-		return input[lastIndex+1 : length-1]
+		folderName = input[lastIndex+1 : length-1]
 	} else {
-		return input[lastIndex+1 : length]
+		folderName = input[lastIndex+1 : length]
+	}
+
+	if folderName[len(folderName)-1:] == ":" {
+		return folderName[0 : len(folderName)-1]
+	} else {
+		return folderName
 	}
 }
