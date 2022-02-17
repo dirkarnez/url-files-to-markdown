@@ -1,8 +1,15 @@
 name: golang-build-actions-workflow
-on: push
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
 jobs:
-  test:
+  build:
     runs-on: windows-latest
+    env:
+      targetZip: url-files-to-markdown-${{ github.ref_name }}.zip
     steps:
       - uses: actions/checkout@v2
       
@@ -15,8 +22,17 @@ jobs:
       
       - run: go build
       
-      - uses: actions/upload-artifact@v2
+      - name: Archive Release
+        uses: thedoctor0/zip-release@master
         with:
-          name: url-files-to-markdown
+          type: 'zip'
           path: url-files-to-markdown.exe
-      
+          filename: "${{ env.targetZip }}"
+          
+      - name: Release prebuilt
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "${{ env.targetZip }}"
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+  
