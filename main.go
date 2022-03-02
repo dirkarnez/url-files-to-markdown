@@ -93,18 +93,16 @@ func getTitle(urlstr string) (string, error) {
 
 		case *network.EventResponseReceived:
 			resp := ev.Response
-			if len(resp.Headers) >= 0 {
-				if resp.URL == urlstr {
-					log.Printf("received headers: %s %s", resp.URL, resp.MimeType)
-					if resp.MimeType != "text/html" {
-						chromedp.Cancel(ctx)
-					}
-				}
-
-				// may be redirected
-				if resp.Headers["Content-Type"] != "text/html" {
+			if resp.URL == urlstr {
+				log.Printf("received headers: %s %s", resp.URL, resp.MimeType)
+				if resp.MimeType != "text/html" {
 					chromedp.Cancel(ctx)
 				}
+			}
+
+			// may be redirected
+			if resp.Headers["Content-Type"] != "text/html" {
+				chromedp.Cancel(ctx)
 			}
 		}
 	})
