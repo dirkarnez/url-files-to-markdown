@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/graniticio/inifile"
 )
@@ -57,9 +58,9 @@ func main() {
 	}
 	errExit(w.Flush())
 
-	for _, s := range urlFiles {
-		errExit(os.Remove(s))
-	}
+	// for _, s := range urlFiles {
+	// 	errExit(os.Remove(s))
+	// }
 }
 
 func errExit(err error) {
@@ -98,21 +99,59 @@ func getTitle(urlstr string) (string, error) {
 				if resp.MimeType != "text/html" {
 					chromedp.Cancel(ctx)
 				}
-			}
 
-			// may be redirected
-			if resp.Headers["Content-Type"] != "text/html" {
-				chromedp.Cancel(ctx)
+				if strings.Contains(resp.URL, "youtube.com") {
+					log.Printf("YT!!")
+				}
+
+				// may be redirected
+				switch ContentType := resp.Headers["Content-Type"].(type) {
+				case string:
+					// here v has type T
+					if !strings.Contains(ContentType, "text/html") {
+						chromedp.Cancel(ctx)
+					}
+				}
+
+				switch ContentType := resp.Headers["content-type"].(type) {
+				case string:
+					// here v has type T
+					if !strings.Contains(ContentType, "text/html") {
+						chromedp.Cancel(ctx)
+					}
+				}
 			}
 		}
 	})
 
+	req := `
+(async () => new Promise((resolve, reject) => {
+	var handle = NaN;
+
+	(function animate() {
+		if (!isNaN(handle)) {
+			clearTimeout(handle);
+		}
+
+		if (document.title.length > 0 && !document.title.startsWith("http")) {
+			resolve(document.title);
+		} else {
+			handle = setTimeout(animate, 1000);
+		}
+	}());
+}));
+`
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(urlstr),
+		//chromedp.Evaluate(`window.location.href`, &res),
+		chromedp.Evaluate(req, nil, func(p *runtime.EvaluateParams) *runtime.EvaluateParams {
+			return p.WithAwaitPromise(true)
+		}),
 		chromedp.Title(&title),
 	)
 	if err == context.Canceled {
 		// url as title
+		log.Printf("Cancel!!")
 		return urlstr, nil
 	}
 
