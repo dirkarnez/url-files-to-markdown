@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: windows-latest
     env:
-      targetZip: url-files-to-markdown-${{ github.ref_name }}.zip
+      targetZip: ${{ github.event.repository.name }}-${{ github.ref_name }}.zip
     steps:
       - uses: actions/checkout@v2
       
@@ -26,7 +26,7 @@ jobs:
         uses: thedoctor0/zip-release@master
         with:
           type: 'zip'
-          path: url-files-to-markdown.exe
+          path: ${{ github.event.repository.name }}.exe
           filename: "${{ env.targetZip }}"
           
       - name: Release prebuilt
@@ -35,4 +35,3 @@ jobs:
           artifacts: "${{ env.targetZip }}"
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
-  
