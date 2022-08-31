@@ -4,3 +4,5 @@ url-files-to-markdown
 ```
 --dir={target}
 ```
+### TODOs
+- [ ] file urls (e.g. "application/pdf")
