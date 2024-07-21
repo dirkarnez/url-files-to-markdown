@@ -17,7 +17,7 @@
             "env": { 
                 "GOROOT": "${env:USERPROFILE}\\Downloads\\go1.21.0.windows-amd64\\go",
                 "GOPATH": "${env:USERPROFILE}\\Downloads\\gopath",
-                "PATH": "${env:USERPROFILE}\\Downloads\\go1.21.0.windows-amd64\\go\\bin"
+                "PATH": "D:\\Softwares\\PortableGit\\bin;${env:USERPROFILE}\\Downloads\\go1.21.0.windows-amd64\\go\\bin"
             }
         }
     },
