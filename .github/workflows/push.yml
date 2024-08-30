@@ -12,12 +12,10 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ windows-latest ] # , ubuntu-latest, macos-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-    env:
-      targetZip: ${{ github.event.repository.name }}-${{ github.ref_name }}.zip
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       
       - name: Setup go
         uses: actions/setup-go@v2
@@ -33,11 +31,11 @@ jobs:
         with:
           type: 'zip'
           path: ${{ github.event.repository.name }}*
-          filename: "${{ env.targetZip }}"
+          filename: "${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.os }}.zip"
           
       - name: Release prebuilt
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "${{ env.targetZip }}"
+          artifacts: "${{ github.event.repository.name }}-${{ github.ref_name }}-${{ matrix.os }}.zip"
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
