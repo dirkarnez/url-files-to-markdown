@@ -4,10 +4,16 @@ on:
     # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
-
+      
+permissions:
+    contents: write
+    
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [ windows-latest ] # , ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     env:
       targetZip: ${{ github.event.repository.name }}-${{ github.ref_name }}.zip
     steps:
@@ -26,7 +32,7 @@ jobs:
         uses: thedoctor0/zip-release@master
         with:
           type: 'zip'
-          path: ${{ github.event.repository.name }}.exe
+          path: ${{ github.event.repository.name }}*
           filename: "${{ env.targetZip }}"
           
       - name: Release prebuilt
