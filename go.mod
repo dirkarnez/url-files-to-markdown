@@ -1,6 +1,6 @@
 module github.com/dirkarnez/url-files-to-markdown
 
-go 1.17
+go 1.25
 
 require github.com/graniticio/inifile v0.0.0-20210325083046-86e94fdc8f99
 
