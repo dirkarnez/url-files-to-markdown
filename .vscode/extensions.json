@@ -1,6 +1,8 @@
 {
     "recommendations": [
         "golang.go",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack"
     ]
 }
